@@ -66,11 +66,11 @@ impl<P: Reducible, const SIZE: u8, const SALT: u64> Chunk for ReducedUniformPoin
     fn compute(raw_points: &Self::Dependencies, index: GridPoint<Self>) -> Self {
         let max_radius = P::max_radius(&raw_points.1);
         let mut points = ArrayVec::new();
-        'points: for p in raw_points.get(index.into_same_chunk_size()).points {
+        'points: for p in &raw_points.get_ref(index.into_same_chunk_size()).points {
             for other in raw_points
                 .get_range(Bounds::point(p.position()).pad(Point2d::splat(p.radius() + max_radius)))
             {
-                for other in other.points {
+                for other in &other.points {
                     if other == p {
                         continue;
                     }
@@ -90,7 +90,7 @@ impl<P: Reducible, const SIZE: u8, const SALT: u64> Chunk for ReducedUniformPoin
                     }
                 }
             }
-            points.push(p);
+            points.push(p.clone());
         }
         ReducedUniformPoint { points }
     }

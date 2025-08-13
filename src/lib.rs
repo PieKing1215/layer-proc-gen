@@ -216,10 +216,21 @@ impl<C: Chunk> Layer<C> {
         self.layer.borrow().0.get(index, self)
     }
 
+    /// Get a chunk or generate it if it wasn't already cached.
+    pub fn get_ref(&self, index: GridPoint<C>) -> std::cell::Ref<C> {
+        self.layer.borrow().0.get_ref(index, self)
+    }
+
     /// Get an iterator over all chunks that touch the given bounds (in world coordinates)
     pub fn get_range(&self, range: Bounds) -> impl Iterator<Item = C> + '_ {
         let range = C::bounds_to_grid(range);
         self.get_grid_range(range)
+    }
+
+    /// Get an iterator over all chunks that touch the given bounds (in world coordinates)
+    pub fn get_range_ref(&self, range: Bounds) -> impl Iterator<Item = std::cell::Ref<C>> + '_ {
+        let range = C::bounds_to_grid(range);
+        self.get_grid_range_ref(range)
     }
 
     /// Get an iterator over chunks as given by the bounds (in chunk grid indices).
@@ -229,9 +240,24 @@ impl<C: Chunk> Layer<C> {
         range.iter().map(move |pos| self.get(pos))
     }
 
+    /// Get an iterator over chunks as given by the bounds (in chunk grid indices).
+    /// Chunks will be generated on the fly.
+    pub fn get_grid_range_ref(
+        &self,
+        range: Bounds<GridIndex<C>>,
+    ) -> impl Iterator<Item = std::cell::Ref<C>> + '_ {
+        // TODO: first request generation, then iterate to increase parallelism
+        range.iter().map(move |pos| self.get_ref(pos))
+    }
+
     /// Get a 3x3 array of chunks around a specific chunk
     pub fn get_moore_neighborhood(&self, index: GridPoint<C>) -> [[C; 3]; 3] {
         C::moore_neighborhood(index).map(|line| line.map(|index| self.get(index)))
+    }
+
+    /// Get a 3x3 array of chunks around a specific chunk
+    pub fn get_moore_neighborhood_ref(&self, index: GridPoint<C>) -> [[std::cell::Ref<C>; 3]; 3] {
+        C::moore_neighborhood(index).map(|line| line.map(|index| self.get_ref(index)))
     }
 }
 

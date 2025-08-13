@@ -248,18 +248,25 @@ impl<C: Chunk> RollingGrid<C> {
     /// If the position is already occupied with a block, fetch it and update the LRU timestamp for that block.
     /// Otherwise generate the block.
     pub fn get(&self, pos: GridPoint<C>, layer: &C::Dependencies) -> C {
+        self.get_ref(pos, layer).clone()
+    }
+
+    #[track_caller]
+    /// If the position is already occupied with a block, fetch it and update the LRU timestamp for that block.
+    /// Otherwise generate the block.
+    pub fn get_ref(&self, pos: GridPoint<C>, layer: &C::Dependencies) -> std::cell::Ref<C> {
         let now = self.time.get();
         self.time.set(now.checked_add(1).unwrap());
         let free = match self.find_free_or_entry(pos, now) {
             Ok(value) => value,
-            Err(p) => return p.chunk.borrow().clone(),
+            Err(p) => return p.chunk.borrow(),
         };
         let chunk = C::compute(layer, pos);
         let prev_pos = free.pos.replace(pos);
-        let prev = free.chunk.replace(chunk.clone());
+        let prev = free.chunk.replace(chunk);
         prev.on_drop(layer, prev_pos);
         free.last_access.set(now);
-        chunk
+        free.chunk.borrow()
     }
 
     fn find_free_or_entry(
