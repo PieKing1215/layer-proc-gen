@@ -217,6 +217,11 @@ impl<C: Chunk> Layer<C> {
     }
 
     /// Get a chunk or generate it if it wasn't already cached.
+    ///
+    /// WARNING: May panic if you are holding another Ref to a chunk that this chunk tries to replace.
+    /// You must drop the previous Ref (eg. iterator) before getting another to be sure.
+    ///
+    /// TODO: replace with safer api that doesn't give out the Ref
     pub fn get_ref(&self, index: GridPoint<C>) -> std::cell::Ref<C> {
         self.layer.borrow().0.get_ref(index, self)
     }
@@ -228,6 +233,11 @@ impl<C: Chunk> Layer<C> {
     }
 
     /// Get an iterator over all chunks that touch the given bounds (in world coordinates)
+    ///
+    /// WARNING: May panic if you are holding another Ref to a chunk that this chunk tries to replace.
+    /// You must drop the previous Ref (eg. iterator) before getting another to be sure.
+    ///
+    /// TODO: replace with safer api that doesn't give out the Ref
     pub fn get_range_ref(&self, range: Bounds) -> impl Iterator<Item = std::cell::Ref<C>> + '_ {
         let range = C::bounds_to_grid(range);
         self.get_grid_range_ref(range)
@@ -242,6 +252,11 @@ impl<C: Chunk> Layer<C> {
 
     /// Get an iterator over chunks as given by the bounds (in chunk grid indices).
     /// Chunks will be generated on the fly.
+    ///
+    /// WARNING: May panic if you are holding another Ref to a chunk that this chunk tries to replace.
+    /// You must drop the previous Ref (eg. iterator) before getting another to be sure.
+    ///
+    /// TODO: replace with safer api that doesn't give out the Ref
     pub fn get_grid_range_ref(
         &self,
         range: Bounds<GridIndex<C>>,
@@ -253,11 +268,6 @@ impl<C: Chunk> Layer<C> {
     /// Get a 3x3 array of chunks around a specific chunk
     pub fn get_moore_neighborhood(&self, index: GridPoint<C>) -> [[C; 3]; 3] {
         C::moore_neighborhood(index).map(|line| line.map(|index| self.get(index)))
-    }
-
-    /// Get a 3x3 array of chunks around a specific chunk
-    pub fn get_moore_neighborhood_ref(&self, index: GridPoint<C>) -> [[std::cell::Ref<C>; 3]; 3] {
-        C::moore_neighborhood(index).map(|line| line.map(|index| self.get_ref(index)))
     }
 }
 
