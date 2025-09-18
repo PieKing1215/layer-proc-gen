@@ -227,7 +227,10 @@ impl<C: Chunk> Layer<C> {
     }
 
     /// Get an iterator over all chunks that touch the given bounds (in world coordinates)
-    pub fn get_range(&self, range: Bounds) -> impl Iterator<Item = C> + '_ {
+    pub fn get_range(&self, mut range: Bounds) -> impl Iterator<Item = C> + '_ {
+        // make max exclusive so it doesn't load an extra chunk on the +x/+y side
+        range.max.x -= 1;
+        range.max.y -= 1;
         let range = C::bounds_to_grid(range);
         self.get_grid_range(range)
     }
@@ -238,7 +241,10 @@ impl<C: Chunk> Layer<C> {
     /// You must drop the previous Ref (eg. iterator) before getting another to be sure.
     ///
     /// TODO: replace with safer api that doesn't give out the Ref
-    pub fn get_range_ref(&self, range: Bounds) -> impl Iterator<Item = std::cell::Ref<C>> + '_ {
+    pub fn get_range_ref(&self, mut range: Bounds) -> impl Iterator<Item = std::cell::Ref<C>> + '_ {
+        // make max exclusive so it doesn't load an extra chunk on the +x/+y side
+        range.max.x -= 1;
+        range.max.y -= 1;
         let range = C::bounds_to_grid(range);
         self.get_grid_range_ref(range)
     }
